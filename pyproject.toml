@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "automas_plugin_notification_webhook"
+version = "0.0.1"
+description = "Notification webhook channel"
+readme = { file = "README.md", content-type = "text/markdown" }
+requires-python = ">=3.10"
+dependencies = ["pydantic>=2.0"]
+
+[project.entry-points."auto_mas.plugins"]
+notification_webhook = "notification_webhook.plugin:Plugin"
+
+[tool.setuptools.packages.find]
+where = ["src"]
