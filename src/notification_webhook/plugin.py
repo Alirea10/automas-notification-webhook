@@ -16,6 +16,9 @@ if TYPE_CHECKING:
 from .schema import Config, WebhookItem
 
 
+SUMMARY_LIMIT = 1200
+
+
 class WebhookChannel:
     def __init__(self, ctx: "PluginContext", config: Config) -> None:
         self.ctx = ctx
@@ -62,10 +65,11 @@ class WebhookChannel:
         if not item.url:
             raise ValueError("Webhook URL 不能为空")
 
+        content = self._append_extra_summary(str(payload.get("text") or ""), payload)
         data = self._render_template(
             item.template,
             title=str(payload.get("title") or ""),
-            content=str(payload.get("text") or ""),
+            content=content,
         )
         headers = {"Content-Type": "application/json"}
         headers.update(json.loads(item.headers or "{}"))
@@ -90,7 +94,8 @@ class WebhookChannel:
         if not webhook_url:
             raise ValueError("Webhook 地址不能为空")
 
-        content = f"{payload.get('title')}\n{payload.get('text')}"
+        text = self._append_extra_summary(str(payload.get("text") or ""), payload)
+        content = f"{payload.get('title')}\n{text}"
         data = {"msgtype": "text", "text": {"content": content}}
         async with httpx.AsyncClient(proxy=AppConfig.proxy) as client:
             response = await client.post(url=webhook_url, json=data)
@@ -120,6 +125,38 @@ class WebhookChannel:
             self.ctx.logger.info(f"[notification_webhook] 图片 Webhook 推送成功: {image_path.name}")
             return True
         raise RuntimeError(f"图片 Webhook 推送失败: {response.text}")
+
+    def _append_extra_summary(self, content: str, payload: dict[str, Any]) -> str:
+        summary = self._render_extra_summary(payload)
+        if not summary:
+            return content
+        return f"{content}\n\n--- Extra ---\n{summary}"
+
+    def _render_extra_summary(self, payload: dict[str, Any]) -> str:
+        extra = payload.get("extra")
+        if not isinstance(extra, dict):
+            return ""
+
+        parts: list[str] = []
+        for index, item in enumerate(extra.get("logs") or [], start=1):
+            if not isinstance(item, dict):
+                continue
+            name = str(item.get("name") or f"log-{index}.txt")
+            content = str(item.get("content") or "")
+            parts.append(f"日志: {name}\n{content}")
+
+        for key, label in (("images", "图片"), ("attachments", "附件")):
+            for index, item in enumerate(extra.get(key) or [], start=1):
+                if not isinstance(item, dict):
+                    continue
+                name = str(item.get("caption") or item.get("name") or item.get("path") or f"{key}-{index}")
+                path = str(item.get("path") or item.get("url") or "")
+                parts.append(f"{label}: {name}" + (f"\n{path}" if path else ""))
+
+        summary = "\n\n".join(parts).strip()
+        if len(summary) > SUMMARY_LIMIT:
+            return summary[: SUMMARY_LIMIT - 3] + "..."
+        return summary
 
     def _render_template(self, template: str, *, title: str, content: str) -> Any:
         vars_map = {
