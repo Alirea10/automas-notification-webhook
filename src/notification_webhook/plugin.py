@@ -44,7 +44,7 @@ class WebhookChannel:
                 continue
             results.append(await self._send_item(payload, item))
         if not results:
-            self.ctx.logger.warning("[notification_webhook] 没有启用的 Webhook")
+            self.ctx.logger.warning("没有启用的 Webhook")
             return False
         return all(results)
 
@@ -85,7 +85,7 @@ class WebhookChannel:
                 response = await client.get(item.url, params=params, headers=headers)
 
         if response.status_code == 200:
-            self.ctx.logger.info(f"[notification_webhook] Webhook 推送成功: {item.name}")
+            self.ctx.logger.info(f"Webhook 推送成功: {item.name}")
             return True
         raise RuntimeError(f"HTTP {response.status_code}: {response.text}")
 
@@ -101,7 +101,7 @@ class WebhookChannel:
             response = await client.post(url=webhook_url, json=data)
             info = response.json()
         if info.get("errcode") == 0:
-            self.ctx.logger.info(f"[notification_webhook] 旧版 Webhook 推送成功: {payload.get('title')}")
+            self.ctx.logger.info(f"旧版 Webhook 推送成功: {payload.get('title')}")
             return True
         raise RuntimeError(f"Webhook 推送失败: {response.text}")
 
@@ -122,7 +122,7 @@ class WebhookChannel:
             response = await client.post(url=webhook_url, json=data)
             info = response.json()
         if info.get("errcode") == 0:
-            self.ctx.logger.info(f"[notification_webhook] 图片 Webhook 推送成功: {image_path.name}")
+            self.ctx.logger.info(f"图片 Webhook 推送成功: {image_path.name}")
             return True
         raise RuntimeError(f"图片 Webhook 推送失败: {response.text}")
 
@@ -210,10 +210,10 @@ class Plugin:
         raw_config = self.ctx.config.to_dict() if hasattr(self.ctx.config, "to_dict") else dict(self.ctx.config)
         channel = WebhookChannel(self.ctx, Config.model_validate(raw_config))
         self.ctx.get("notify").register_channel("webhook", channel)
-        self.ctx.logger.info("[notification_webhook] 通道已启动")
+        self.ctx.logger.info("通道已启动")
 
     async def on_stop(self, reason: str) -> None:
         notify = self.ctx.get("notify")
         if notify is not None:
             notify.unregister_channel("webhook")
-        self.ctx.logger.info(f"[notification_webhook] 插件停止, reason={reason}")
+        self.ctx.logger.info(f"插件停止, reason={reason}")
