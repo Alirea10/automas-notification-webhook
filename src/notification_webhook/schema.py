@@ -1,6 +1,6 @@
-from typing import Literal
+﻿from typing import Literal
 
-from mas.plugin_config import PluginField
+from app.core.plugins.fields import PluginField
 from pydantic import BaseModel, ConfigDict
 
 
