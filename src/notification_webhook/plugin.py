@@ -11,7 +11,7 @@ from app.core import Config as AppConfig
 from app.utils import ImageUtils
 
 if TYPE_CHECKING:
-    from mas.plugins import PluginContext
+    from app.plugins import PluginContext
 
 from .schema import Config, WebhookItem
 
