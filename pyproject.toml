@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "automas_notification_webhook"
-version = "0.0.3"
+version = "0.0.4"
 description = "Notification webhook channel"
 readme = { file = "README.md", content-type = "text/markdown" }
 requires-python = ">=3.10"
